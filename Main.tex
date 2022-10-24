@@ -1,0 +1,110 @@
+\documentclass[11pt,a4paper]{report}
+\input{packages}
+
+
+\begin{document}
+\pagestyle{fancy}
+\fancyfoot[C]{\thepage}
+\selectlanguage{italian}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{titlepage}
+	\begin{center}
+		\begin{figure}
+			\includegraphics[width=3cm, height=3cm]{Immagini/unisaLogo.png}
+			\centering
+		\end{figure}
+		{\Large Università degli Studi di Salerno}\\[0.2truecm]
+		{\large Dipartimento di Informatica}\\
+		\hrulefill
+		\vfill
+		{\large Tesi di Laurea di I livello in}\\[0.2truecm]
+			
+		{\large Informatica}\\
+		%{\Large Informatica}\\
+		\vfill\vfill
+		{\LARGE {\bf Utilizzo di React per la realizzazione di applicazioni DeFi e interazione con smart-contract in \\[0.4truecm] Solidity}}
+		
+		\vfill\vfill
+		
+		
+		\ \ \ \ \ \ \ \ \ {\bf Relatore} \hfill {\bf Candidato}\ \ \\
+		Prof. \text{ Gerardo Iovane} \hfill  \text{Alessandro Cavaliere}
+		
+		
+		\vfill
+		\hrulefill 
+		\begin{center} Anno Accademico 2021/2022 \end{center}
+		
+	\end{center}
+\end{titlepage}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\myemptypage
+\include{Abstract}
+\myemptypage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cleardoublepage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begingroup
+    \pagestyle{plain}
+	\pagenumbering{Roman}
+    \hypersetup{linkcolor=black}
+	\tableofcontents
+\endgroup
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cleardoublepage
+\myemptypage
+\pagenumbering{arabic}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{Introduzione}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{Capitolo1}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{Capitolo2}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{Capitolo3}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{Conclusioni}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{fancy}
+\fancyhead{}
+\phantomsection\addcontentsline{toc}{chapter}{Bibliografia}
+\Urlmuskip=0mu plus 4mu
+\bibliographystyle{unsrt}
+\bibliography{bibliografia}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\phantomsection\addcontentsline{toc}{chapter}{Elenco delle figure}
+\hypersetup{linkcolor=black} 
+\listoffigures %\listoffigures 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\phantomsection\addcontentsline{toc}{chapter}{Elenco dei codici}
+\hypersetup{linkcolor=black} 
+\lstlistoflistings %\lstlistoflistings 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{Dediche}
+\newpage\null\thispagestyle{empty}\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}

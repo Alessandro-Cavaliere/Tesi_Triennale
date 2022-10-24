@@ -1,0 +1,905 @@
+
+\chapter{Implementazione degli applicativi}\makeatletter\def\@currentlabel{3}\makeatother
+\label{cap3}
+\lhead{\textbf{CAPITOLO 3.} \textit{IMPLEMENTAZIONE DEGLI APPLICATIVI}}
+
+\section{Introduzione e caratteristiche}\label{Organizzazione_applicativo}
+In seguito alla descrizione degli strumenti di sviluppo utilizzati, introduciamo l'implementazione vera e propria degli applicativi.
+In questo capitolo verranno mostrate due differenti implementazioni di applicazione decentralizzata, una riguardante lo staking di criptovalute (\ref{staking_app}), nella quale verrà mostrato lo sviluppo front-end dell'applicazione e verrà spiegato nel dettaglio il funzionamento dello staking; l'altra che rappresenterà un fac-simile di exchange decentralizzato (DEX)(\ref{exchange}), nella quale, oltre a mostrare lo sviluppo front-end dell'applicazione, verrà illustrato il funzionamento di un Automatic Market Maker (AMM), l'interfacciamento con gli smart-contract in Solidity e tutti i funzionamenti intrinseci di un exchange decentralizzato.
+
+\section{Implementazione dello staking}\label{staking_app}
+In questa sezione verrà mostrato lo sviluppo prettamente lato front-end di un applicazione decentralizzata (Dapp) in React.
+L’applicazione, per quanto possa ancora essere un prototipo, è un esempio di piattaforma per lo staking di criptovalute strutturata sulla rete di test Ropsten. L'interfaccia grafica utilizza una logica intuitiva che permette all'utente una visualizzazione semplificata e una veloce interazione con Metamask (e quindi coi propri cripto asset).
+\subsection{In cosa consiste lo staking?}\label{staking_def}
+Lo staking è quel processo che alcune criptovalute, la cui Blockchain utilizza come algoritmo di consenso la Proof-Of-Stake (PoS), permettono di realizzare.
+
+Lo staking di criptovalute consiste in una procedura passiva attraverso cui un possessore di cripto asset (staker) blocca i propri asset per un determinato periodo di tempo; da questa procedura riceverà delle ricompense sotto forma di criptovalute per generare guadagno. 
+
+Gli staker ricevono ricompense dallo staking perché aiutano la Blockchain a confermare le transazioni in maniera decentralizzata e aggiungere nuovi blocchi alla catena. Questo processo è molto simile al mining visto in (\ref{mining}), con la differenza che in una Blockchain utilizzatrice di PoS viene chiamato \textit{forging} (o anche \textit{minting}) e che i miner vengono chiamati \textit{forger} (o anche \textit{validatori}). Esistono diverse tipologie di staking, definiamo un breve elenco dei più usati:
+
+\begin{itemize}
+\item Il \textit{Pool Staking}, il quale consiste in uno \textit{staking pool}\footnote{Consente a più stakeholder di unire e combinare la propria potenza computazionale in maniera tale da aumentare le proprie possibilità di essere premiati.} nel quale vengono suddivise, in modo del tutto proporzionale, le ricompense tra tutti gli staker;
+\item Il \textit{Cold Staking} consiste nel processo di staking in un wallet offline, garantendo la sicurezza massima nell'investimento che si vuole fare;
+\item Lo \textit{Staking Delegato}, invece, consiste nell'affidamento di questa procedura a piattaforme di exchange o altri intermediari. Questi ultimi rendono molto semplici e intuitive le operazioni per mettere in stake le proprie criptovalute, garantendo una grande facilità di utilizzo.
+\end{itemize}
+
+Nonostante la maggior parte delle piattaforme (exchange nel nostro caso) per lo \textit{staking delegato} sfruttano la Proof-Of-Stake (PoS) per generare profitti, la nostra applicazione ha come obiettivo primario quello di incentivare gli utenti a mettere in stake (e di bloccare) i token proprietari del sistema Atmosphere Arc \cite{atmt} e generare fees dalle varie piattaforme che sono affiliate e supportano il sistema appena citato.
+
+I token proprietari sono chiamati ATMOS e fanno parte dello standard dei token ERC-20\footnote{Un token ERC-20 (Ethereum request for comment) è uno standard per i token fungibili utilizzato per creare ed emettere smart-contract sulla Blockchain di Ethereum.}. 
+\subsection{Interfaccia Grafica dell'applicativo}\label{UI_staking}
+L'applicazione sviluppata è un prototipo di UI capace di rendere utilizzabile e accessibile lo staking dei token ATMOS per tutti gli utenti possessori. Di seguito viene mostrata l'interfaccia e tutte le sue peculiarità
+
+\subsubsection{Navbar e Footer}
+
+Navbar e Footer sono due componenti essenziali in una pagina web, permettono un elenco organizzato di collegamenti ad altre pagine Web (solitamente pagine interne); permettono una più veloce navigazione all'interno della pagina e una maggiore pulizia nella visualizzazione dei contenuti.
+
+Nel nostro applicativo, la barra di navigazione è una \textit{sideBar} che viene mostrata con un'animazione all'onClick dell'icona del menu. Di seguito viene mostrato il codice CSS e la logica JSX per rendere possibile l'animazione.  
+\begin{lstlisting}[caption={[Navbar Code (staking)]},language=HTML5]
+/*JSX*/
+const showSidebar = () => {
+        setSidebar(!sidebar)
+    }
+return(
+/*[...]*/
+<nav className={sidebar ? "nav-menu active" : "nav-menu"}>
+      <ul className="nav-menu-items" onClick ={showSidebar}>
+           <li className="nav-menu-toggle">
+              <Link to='#' className="bars">
+                  <AiIcons.AiOutlineClose/>
+               </Link>
+           </li>
+{SidebarElements.map((item, index) => {
+     return (
+          <li key={index} className={item.cssName}>
+             <Link to={item.path}>
+                 {item.icon}
+                 <span style={{marginLeft: 15}}>
+                 {item.title}
+                 </span>
+             </Link>
+          </li>
+     );
+})}
+</ul>
+</nav>
+/*[...]*/
+/*CSS*/
+.nav-menu{
+    z-index: 1;
+    background-color: #060b26;
+    width: 250px;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: -100%;
+    transition: 850ms;
+}
+.nav-menu.active{
+    left: 0;
+    transition: 350ms;
+}																					    	      -navbarCode
+\end{lstlisting}
+
+L'animazione avviene tramite l'assegnazione dinamica di stile CSS, passando dalla classe \textcourier{nav-menu} a \textcourier{nav-menu active}(come mostrato a riga 15) finchè l'utente non interagisce con l'icona del menu, ossia, fin quando la variabile “sidebar” viene modificata attraverso la funzione “showSideBar” a riga 2. Il contenuto della Sidebar viene generato attraverso il mapping\footnote{La mappatura dei dati consiste nell'applicare una funzione a tutti i membri di un elenco o di una struttura simile. L'uso della mappatura può aiutarti a regolare l'intervallo dei valori o a preparare i valori per particolari tipi di analisi.} degli oggetti restituiti dalla classe \textcourier{SidebarElements.js}, la quale definisce i bottoni che la navbar permetterà di selezionare; la strategia applicativa appena descritta permette un rendering molto efficiente. Viene mostrata in figura \ref{sidebar} la visualizzazione della \textit{sidebar} appena descritta.
+
+Siccome React impiega un DOM virtuale, che traccia le modifiche e aggiorna solo gli elementi variati, garantisce un aggiornamento efficiente ed un’ottima user experience. 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=13cm,height=6cm]{Immagini/sidebar.png}
+    \caption[Sidebar dell'applicativo riferito allo staking]{Sidebar dell'applicativo.}
+    \label{sidebar}
+\end{figure}
+
+Per quanto riguarda il Footer dell'applicazione, vengono mostrate piccole sezioni per le informazioni della compagnia, FAQ, supporto e icone per la renderizzazione ai rispettivi canali social. Viene mostrato in figura \ref{footer}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=14cm,height=4cm]{Immagini/footer.png}
+    \caption[Footer dell'applicativo riferito allo staking]{Footer dell'applicativo.}
+    \label{footer}
+\end{figure}
+
+I due elementi appena mostrati vengono definiti nelle componenti \textcourier{Navbar.js} e \textcourier{Footer.js} con il relativo stile CSS importato al loro interno.
+
+\subsubsection{Pagina principale}
+La pagina principale dell'applicazione consiste in tanti Card che mostrano diverse informazioni all'utente. Queste informazioni devono essere prelevate, elaborate e mostrate in maniera adeguata al fruitore dei servizi dell'ipotetico applicativo finale che verrà sviluppato su questo prototipo.
+Prima di presentare le interfacce dell'applicazione introdotta in (\ref{staking_app}), mostriamo la struttura delle componenti e della loro gerarchia in figura \ref{struttura_staking}.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=14cm,height=8cm]{Immagini/StakingChart.png}
+    \caption[Albero delle componenti dell'applicativo riferito allo staking]{Struttura delle componenti dell'applicativo riferito allo staking.}
+    \label{struttura_staking}
+\end{figure}
+Alla radice della nostra applicazione, come di consuetudine per ogni applicazione in React, c'è \textcourier{App.js}, la quale è collegata (attraverso meccanismi interni approfonditi in \ref{Struttura_componenti}) alle componenti successive dell'albero. Al di sotto della radice (oltre alle componenti sempre presenti \textcourier{Navbar.js} e \textcourier{Footer.js}) c'è la rotta riferita ad \textcourier{Home.js} la quale possiede a sua volta altre 4 componenti principali in cui cono presenti i Card principali per la visualizzazione dei dati: \textcourier{InfoCard.js}, \textcourier{Staking.js}, \textcourier{Lock.js}, \textcourier{MainCard.js}.
+
+
+I primi Card, mostrati in figura \ref{Card1}, fanno parte della componente \textcourier{MainCard.js}, comunicano all'utente la loro disponibilità dei token ATMOS (i quali vengono conteggiati attraverso Metamask), le revenue giornaliere, mensili e annuali, i relativi token depositati e messi in stake.
+Le informazioni in questione possono essere mostrate soltanto agli utenti connessi all'applicazione. La logica della \ref{Connessione a Metamask} verrà mostrata nella parte dell'elaborato relativa all'implementazione dell'exchange. 
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=14cm,height=4.5cm]{Immagini/Card1.png}
+    \caption[Main Card per il balance e le revenue]{Card che mostrano il balance e le revenue dell'utente collegato.}
+    \label{Card1}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=12cm,height=5cm]{Immagini/Card2.png}
+    \caption[Card con i form per la messa in stake e in lock dei token]{Card che mostrano i form per la messa in stake e in lock dei token.}
+    \label{Card2}
+\end{figure}
+Invece, per quando riguarda il corpo vero e proprio dell'applicativo, i Card mostrati in figura \ref{Card2} cono composti da form per mettere in stake e in lock\footnote{Il lock di token si riferisce a un periodo di tempo specifico in cui i token non possono essere inoltrati o scambiati.Tipicamente, viene utilizzato come strategia preventiva per mantenere un valore stabile a lungo termine di un particolare asset.} quantitativi variabili di token ATMOS. Questi Card appartengono alle componenti \textcourier{Staking.js}, \textcourier{Lock.js} e \textcourier{InfoCard.js}, i quali, attraverso il codice JSX e il CSS specifico importato nelle componenti, renderizza gli elementi descritti.
+
+Una volta inserito l'ammontare di token da mettere in stake o in lock, l'utente dovrà cliccare sul bottone riferito all'operazione corrispondente; si dovrà poi confermare l'operazione attraverso l'approvazione dei token che si vogliono utilizzare. Come è stato accennato in \ref{metamask}, Metamask gestisce tutte le comunicazioni con la Blockchain integrando la visualizzazione per la conferma di operazioni (come quella dell'approvazione nel nostro caso specifico) in pop-up che vengono visualizzati all'utente in maniera molto veloce e sintetica. Si mostra in figura \ref{approve} un esempio di chiamata all'approve dei nostri token ATMOS.
+
+
+
+L'operazione di approvazione consiste nell'impostare un valore (nel nostro caso l'importo inserito nei form) come indennità di spesa sui token del chiamante. La funzione di approve appartiene all'ABI standard dei token ERC-20 e richiede come parametri il valore appena accennato e l'address del token ERC-20 per cui si vuole fare l'approvazione.  Con questa funzione, si può assegnare ad un altro indirizzo i permessi di spendere i token. La limitazione sui token che si approvano permette di evitare exploit o l’azzeramento dei fondi da parte di malintenzionati.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=4cm,height=6cm]{Immagini/approve.png}
+    \caption[Schermata di approvazione dei token ATMOS]{Esempio di approvazione dei token ATMOS tramite Metamask.}
+    \label{approve}
+\end{figure}
+Come anticipato, React utilizza il Virtual DOM per apportare modifiche o per effettuare controlli specifici; sfruttiamo questo vantaggio per controllare se l'utente possiede abbastanza token oppure se è stata effettuata l'approvazione prima di un'operazione. La visualizzazione del messaggio viene mostrata in figura \ref{controllo}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=10cm,height=8cm]{Immagini/Controllo.png}
+    \caption[Schermata di warning per la mancata approvazione dei token]{Messaggio di mancata approvazione dei token visualizzato nel Card.}
+    \label{controllo}
+\end{figure}
+
+Il controllo in questione deve essere fatto finché un ipotetica operazione \textit{asincrona}\footnote{Un'operazione asincrona è un'unità di lavoro che funziona separatamente dal thread principale, notificando, successivamente, quando avrà finito il lavoro.} (che sia un'approve oppure la richiesta della conferma di un'operazione attraverso Metamask) non venga terminata o confermata dall'utente. Così facendo, si simula l'handling dei messaggi di errore, così come si farebbe con JQuery\footnote{Libreria JavaScript progettata per semplificare l'attraversamento e la manipolazione dell'albero DOM HTML, nonché la gestione degli eventi, l'animazione CSS e Ajax.}. 
+
+\section{Implementazione dell'exchange}\label{exchange}
+La maggior parte del lavoro di questo elaborato è stato dedicato alla realizzazione di un exchange decentralizzato (DEX), anch'esso strutturato sulla rete di test Ropsten su Blockchain Ethereum.
+
+Prima di indentrarci nell'implementazione, c'è bisogno di introdurre il funzionamento dei DEX e, quindi, di un Automatic Market Maker (AMM).
+Verrà mostrato il motivo per il quale i DEX hanno rivoluzionato il mondo della finanza decentralizzata (DeFi), definendo tutte le logiche, le caratteristiche e i servizi da essi offerti.
+
+\subsection{Exchange Decentralizzato (DEX)}\label{dex}
+La finanza decentralizzata (DeFi) ha offerto al mondo un modo notevolmente migliore di fare trading e di guadagnare entrate passive, in questo caso tramite le criptovalute. Prima che esistesse la DeFi, il trading veniva condotto dagli \textit{exchange centralizzati} (CEX) , i quali vengono creati e organizzati da organizzazioni centralizzate che fungono da intermediari tra gli acquirenti e i venditori. Essi mantengono il controllo sulle chiavi private (evitando agli utenti l'onere di gestirle), i parametri di trading e le informazioni relative all'utente; memorizzano i dati di tutti gli ordini di acquisto e di vendita per un determinato asset che l'utente effettua, archiviandoli all'interno di un database centralizzato.
+Il controllo e la gestione degli elementi appena citati, rende questi exchange molto facili da utilizzare, anche per utenti nuovi nel settore.
+
+Uno dei più grandi svantaggi dei CEX è quello legato alla sicurezza: lasciare che l'exchange gestisca la chiave per il portafoglio significa che qualsiasi risorsa al suo interno non è veramente tua; di fatto se l'exchange venisse violato, o addirittura avvenisse un fallimento dell'azienda, tutto quello che si possiede nel proprio portafogli andrebbe perso. In poche parole, i CEX sono un compromesso per gli utenti che non vogliono avere l'onere, come anticipato, di gestire le proprie chiavi.
+
+Un'\textit{exchange decentralizzato} (DEX), invece, si porta con sé le caratteristiche derivanti dalla DeFi, preservando l'etica crittografica e rendendolo uno strumento sicuro e privo di intermediazione.
+Senza un'entità centrale non esisterà una piattaforme in cui depositare dei fondi, l'utente dovrà soltanto collegare il proprio portafoglio al DEX utilizzando le proprie chiavi private. Questo ovviamente implica l'onere di gestire con cura e con attenzione le proprie chiavi; d'altra parte, rende le risorse in tutto e per tutto controllabili solo dall'utente e non da entità centrali.
+
+I DEX, inoltre, non interagiscono con il denaro fiat\footnote{Con denaro fiat si intende una valuta emessa dal governo che non è supportata da un bene fisico, come oro o argento, ma piuttosto dal governo che l'ha emessa.}, quindi non necessitano la conformità a KYC\footnote{acronimo di Know Your Customer (letteralmente: “conosci il tuo cliente”), è l’insieme di procedure che devono essere attuate da alcuni istituti e professionisti per obbligo di legge. Queste procedure servono per acquisire dati certi e informazioni sull’identità dei loro utenti e clienti.}.
+Grazie a questo, la tua privacy, le tue informazioni personali e i tuoi dati sensibili non possono essere visti o hackerati da nessuna persona ( i dati non fanno parte di nessuna istituzione o ente centrale).
+Esistono due differenti tipi di DEX:
+\begin{itemize}
+\item  Basato sugli \textit{Order-book}: i quali utilizzano un algoritmo (invece di una piattaforma centrale) per trovare e instradare gli scambi tra i singoli utenti. Gli smart-contract registrano gli scambi sulla Blockchain per riflettere gli asset che si spostano tra acquirenti e venditori. Non esiste un mercato vero e proprio, nel mezzo si interpone solo un algoritmo, rendendo comunque il servizio decentralizzato;
+\item Gli \textit{Automatic Market Maker} (AMM): la nostra applicazione si posizione in questa categoria di DEX, nel paragrafo successivo (\ref{AMM}) si approfondisce il tema in questione.
+\end{itemize}
+
+\subsection{Automatic Market Maker (AMM)}\label{AMM}
+Gli Automatic Market Maker (AMM) sono dei sistemi basati su Blockchain che permettono il trading \textit{automatizzato} attraverso scambi di criptovalute decentralizzati, il tutto regolato dagli smart-contract. In un contesto di questo tipo, il codice degli smart-contract è legge, il quale elabora tutte le transazioni automaticamente, senza fare affidamento su richieste di acquisto/vendita di terze parti per i token scambiati. Prenderemo in esempio il protocollo di Uniswap \cite{uniswap_docs} per la spiegazione tecnica del funzionamento di questi sistemi. 
+
+\subsubsection{Pool di liquidità}\makeatletter\def\@currentlabel{Pool di liquidità}\makeatother\label{pool_liquidità}
+Tra gli smart-contract più importanti di un AMM ci sono quelli riferiti al \textit{Pool di liquidità}.
+Un\textit{ Pool di liquidità}, come mostrato nella rappresentazione \ref{pool} in \cite{uniswap_pool}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=13cm,height=4cm]{Immagini/Pool.png}
+    \caption[Rappresentazione grafica di un Pool di Liquidità]{Rappresentazione grafica di un Pool di Liquidità.}
+    \label{pool}
+\end{figure}
+
+
+non è altro che una raccolta di token crittografici, che viene utilizzato per rendere possibile il trading tramite un algoritmo che definisce i prezzi dei token in base al rapporto variabile dei token forniti; infatti, come definito in \cite{uniswap_pool}:“Ogni pool di liquidità è una sede di negoziazione per una coppia di token ERC-20.[...]”.
+
+Ogni \textit{Pool di liquidità} è composto da due token (nel caso di Uniswap da due token ERC-20), ecco perché i pool di liquidità sono anche chiamati coppie (o Pair).
+Quando viene creato un nuovo contratto Pool i saldi di ciascun token sono uguali a zero, saranno i Liquidity Provider (LP, letteralmente fornitori di liquidità) o market maker, che forniranno la liquidità ai pool sotto forma di asset digitali. I primi fornitori del pool saranno anche coloro che determineranno il prezzo iniziale del Pool. I Liquidity Provider (LP) fanno parte della prima parte, raffigurata in figura \ref{liquidity}.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=12cm,height=4cm]{Immagini/liquidity.png}
+    \caption[Rappresentazione grafica del funzionamento per il deposito liquidità da parte dei Liquidity Provider (LP)]{Rappresentazione deposito liquidità da parte dei Liquidity Provider (LP).}
+    \label{liquidity}
+\end{figure}
+
+Negli AMM, è importante notare come i Pool con grandi quantità di trade attivi (e quindi grande liquidità) prosperino sulla rete, mentre i Pool con bassa liquidità causano enormi impatti sui prezzi e slittamenti vari, rendendoli, quindi, inefficaci. Inoltre, per depositare fondi in un pool, è necessario fornire una stessa quantità di liquidità per token.
+
+Questi vincoli nascono affinché tutti gli utenti possano scambiare qualsiasi token in qualsiasi momento; il Pool deve sempre disporre di quantità sufficienti di entrambi i token della coppia del Pool, pertanto, ogni DEX che opera sul modello AMM è interessato ad avere una liquidità più grande possibile. Per ottenere una grande liquidità nei Pool, ogni AMM incentiva gli utenti a depositare token nei propri Pool, tramite il concetto di \textit{yield farming}( o liquidity mining).
+
+L'idea dello \textit{yield farming} è quella di ricompensare gli utenti fornitori di liquidità con delle commissioni speciali, chiamate \textit{commissioni LP}(o LP token), ossia commissioni di negoziazione distribuite in maniera proporzionale alla quantità di liquidità apportata, rappresentante una parte di proprietà del Pool. Se un Liquidity Provider (LP) vuole rimuovere liquidità e riacquisire i propri asset, deve bruciare i suoi LP token per recuperare gli asset ( ossia i token originali).
+
+\subsubsection{Token Swaps}
+Dall'altra parte dell'AMM, come mostrato in figura \ref{swap}, c'è la sezione relativa ai Trader.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=12cm,height=4cm]{Immagini/Swap.png}
+    \caption[Rappresentazione grafica del funzionamento relatico al trading di token]{Sezione relativa al trading di token.}
+    \label{swap}
+\end{figure}
+I trader rappresentano tutti quegli utenti che desiderano scambiare token per altri token e pagare il prezzo in base alla riserva di liquidità (mostrata in figura \ref{pool}) nel contratto.
+Come anticipato in (\ref{pool_liquidità}), ogni coppia di token è supportata da un Pool di liquidità, il quale, ricordiamo, non è altro che uno smart-contract che definisce tutte le operazione per quanto riguarda le operazioni di deposito e di prelievo, oltre che utilizzato per detenere i saldi dei due token. Per assicurarsi che il rapporto tra le attività nei pool di liquidità rimanga il più equilibrato possibile eliminando eventuali discrepanze nei prezzi delle attività nei pool, gli AMM utilizzano equazioni matematiche preimpostate. Nel caso di Uniswap, come definito in \cite{uniswap_swap}, viene utilizzata la “\textit{formula del prodotto costante}” ossia:
+\begin{equation*}
+		x \cdot y=k ,dove:
+\end{equation*}\begin{itemize}
+\item \textit{x} rappresenta il valore del primo asset (token A);
+\item \textit{y} rappresenta il valore del secondo asset (token B);
+\item \textit{k}, invece, è una costante.
+\end{itemize}
+
+Sostanzialmente Uniswap, attraverso questa formula, mantiene sempre un valore costante, uguale nel tempo, per la moltiplicazione del prezzo del token A col token B. Prendiamo in esempio un ipotetico Pool di liquidità tra un token A e un token B: se il token A viene acquistato dai trader, il token B verrà aggiunto al Pool, rimuovendo il token A da esso. Questa operazione fa diminuire la quantità del token A all'interno del Pool, il che, a sua volta, fa aumentare il suo prezzo (proprio per soddisfare l'effetto di bilanciamento della formula sopra citata). Mentre il prezzo del token A aumenta di prezzo, il prezzo del token B diminuisce a sua volta perché aggiunto al Pool.
+
+\subsubsection{Routing }\makeatletter\def\@currentlabel{Routing}\makeatother
+\label{Routing}
+Spesse volte i trader hanno bisogno di scambiare tipologie di asset per i quali non esiste un Pool di liquidità; la creazione di un Pool potrebbe essere molto costoso per alcuni trader, di conseguenza, per far fronte a questo problema, è nato il concetto del \textit{Routing}.
+Il \textit{Routing} è quella procedura che permette ai trader (o utenti della Dapp fruitori dei servizi) di scambiare asset anche quando non esiste un Pool di liquidità tra una coppia di asset su cui vogliono operare.
+Questa procedura consiste nello scandagliare tutti i Pool di liquidità che esistono tra i due token della coppia che si vuole scambiare e scegliere la \textit{Custom Path} (la rotta) da seguire per ottenere il miglior prezzo possibile per l'acquirente. Lo smart-contract che si occupa di effettuare l'operazione di Routing è il \textit{Router Contract} (che approfondiremo nei paragrafi successivi). Il contratto in questione, esegue queste operazioni totalmente in background, in un unica transazione di scambio, in maniera tale che l'utente non si accorga di nulla e renda le operazioni molto più semplificate. Un esempio di rotta tra Pool di liquidità viene mostrato nella figura \ref{routing}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=13cm,height=5cm]{Immagini/Routing.png}
+    \caption[Custom Path per il Routing tra pool di liquidità]{Esempio di Routing tra più Pool di liquidità.}
+    \label{routing}
+\end{figure}
+
+\subsection{Interfaccia Grafica dell'applicativo}\label{UI_dex}
+La maggior parte del lavoro correlato a questo elaborato consiste, come già anticipato, nell'implementazione di un exchange decentralizzato (DEX) distribuito sulla rete di test Ropsten di Ethereum. L'applicativo in questione consta di due pagine principali:
+\begin{itemize}
+\item La pagina relativa allo \textit{Swap} dei token ERC-20 presenti sulla rete di Ethereum;
+\item La pagina relativa ai \textit{Pool di liquidità} per ogni coppia di token su cui si vuole operare.
+\end{itemize}
+
+Queste due pagine rappresentano le parti nelle quali si concentra tutta la logica dell'exchange e l'interazione vera e propria con gli smart-conctract sviluppati in Solidity (approfondiremo la logica in \ref{interazione_smartc}).
+Mostriamo ora l'interfaccia grafica dell'applicativo, la quale è stata pensata per essere user-friendly, facile da utilizzare e intuitiva il più possibile.
+
+\subsubsection{Struttura delle componenti}\label{Struttura_componenti}
+
+Prima di mostrare le varie interfacce implementate, definiamo la struttura delle componenti che abbiamo scelto per la nostra applicazione React. Si è sintetizzata la gerarchia delle componenti nella figura \ref{struttura_componenti}.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=14cm,height=8cm]{Immagini/StrutturaComponenti.png}
+    \caption[Albero delle componenti dell'applicativo riferito all'exchange]{Struttura delle componenti dell'applicativo riferito al DEX.}
+    \label{struttura_componenti}
+\end{figure}
+\\Come si può notare, alla radice della nostra gerarchia c'è la componente \textcourier{App.js}, la quale esegue il rendering dell'interfaccia utente globale dell'app e configura tutte le \textit{variabili di stato} necessarie al corretto funzionamento delle procedure eseguite nelle altre componenti renderizzate da quest'ultima. Per il corretto rendering delle componenti sottostanti ad \textcourier{App.js} si utilizza la libreria \textcourier{react-router}, in quanto un'app React di base non consente l'instradamento delle pagine. Una volta scaricata la libreria tramite il comando \textcourier{npm install react-router --save}, è possibile definire diverse “rotte” per la nostra applicazione (come mostrato in figura \ref{struttura_componenti}).
+Di seguito si mostra il codice JSX del rendering delle componenti principali della gerarchia (notare come queste siano solo le principali, ogni componente possiede altre sotto-componenti per la gestione dinamica delle proprie funzionalità specifiche):\\
+
+
+\begin{lstlisting}[caption={[App.js (exchange)]},language=jsx] 
+return (
+ <>
+   <Router>
+   
+   {/*Navbar component*/}
+   <Navbar isConnected={isConnected}
+   currentAccount={currentAccount}
+   web3={web3} showCard={showCard} 
+   active={active}/>
+   
+ {/*ROTTE DELLA PIATTAFORMA*/}
+ <Switch>
+ 
+		<Route path='/swap'
+        render={()=> <Swap web3={web3} 
+        router={routerContract} factory={factoryContract}  
+        isConnected={isConnected} showCard={showCard}
+        currentAccount={currentAccount}/>}
+        />
+
+    <Route path='/liquidity'
+        render={()=> <Liquidity web3={web3} 
+        router={routerContract} factory={factoryContract}  
+        isConnected={isConnected} showCard={showCard}
+        currentAccount={currentAccount}/>}
+        />
+         
+ </Switch>
+
+   {/*Footer component*/}
+   <Footer/>
+
+   </Router>
+</>
+);																												-App.js
+\end{lstlisting}\makeatletter\def\@currentlabel{App.js}\makeatother
+\label{App.js}
+
+Come è visibile nel codice JSX di \ref{App.js}, le componenti \textcourier{Navbar.js} e \textcourier{Footer.js} sono sempre presenti, a prescindere dalla rotta, per ogni rendering della pagina.
+Questo perché la Navbar e il Footer, in generale in un'applicazione web, sono due elementi essenziali che, solitamente, si ripetono in ogni pagina.
+Nella riga 19 e 26 ,rispettivamente, vengono definite le rotte per le componenti principali dell'applicazione sviluppata:
+\begin{itemize}
+\item La componente \textcourier{Swap.js} la quale interfaccia sarà approfondita in (\ref{Swap.js});
+\item La componente \textcourier{Liquidity.js} la quale interfaccia sarà approfondita in (\ref{Liquidity.js}).
+\end{itemize}
+Prima di approfondire le due componenti sopra citate, nel paragrafo successivo verrà spiegato come avviene la connessione al nostro wallet digitale (e quindi la possibilità di comunicare in maniera molto semplificata con la Blockchain), le funzioni chiamate attraverso la libreria \textit{web3.js} e le relative interfacce grafiche per l'autenticazione.
+\subsubsection{Connessione a Metamask }\makeatletter\def\@currentlabel{Connessione a Metamask}\makeatother
+\label{Connessione a Metamask}
+
+La connessione al wallet di Metamask (e il relativo accesso ai propri token), viene gestita tramite la libreria \textit{web3.js}; a livello grafico, viene mostrato un bottone all'interno della Navbar \ref{navbar}, il quale, all'\textit{onClick}, tramite delle funzioni CSS, rende il background sfocato per dirigere l'attenzione dell'utente su un Card (renderizzato dalla componente \textcourier{ConnectionCard.js}) che visualizza graficamente diversi provider ai quali ci si può collegare. Nel nostro caso prenderemo in esempio l'utilizzo di Metamask.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=15cm,height=7cm]{Immagini/navbar.png}
+    \caption[Scelta provider per la connessione alla Dapp]{Card per la scelta del provider visualizzato all'\textit{onClcik} del bottone “Connect Wallet”.}
+    \label{navbar}
+\end{figure}
+
+Una volta scelto il wallet, viene eseguita la funzione \ref{onLogin}: il codice viene mostrato di seguito.
+\begin{lstlisting}[caption={[\textcourier{onLogin()} Function]},language=jsx] 
+const onLogin = async (provider) => {
+        const web3= new Web3(provider)
+        const accounts = await web3.eth.getAccounts();
+        const chainId = await web3.eth.getChainId();
+        if (accounts.length === 0) {
+            console.log("Please connect to MetaMask!");
+        } else if (accounts[0] !== currentAccount) {
+        setProvider(provider);
+        setWeb3(web3);
+        setCurrentNetwork(chainId);
+        setCurrentAccount(accounts[0]);
+        setIsConnected(true);
+        window.localStorage.setItem('IS_CONNECTED',accounts[0]);
+
+        /*Create local contracts copy */
+        const factory=SetAtmosFactoryContract(web3)
+        setFactoryContract(factory)
+
+        const router=SetAtmosRouterContract(web3)
+        setRouterContract(router)
+        }
+    };        																			     -onLogin
+\end{lstlisting}\makeatletter\def\@currentlabel{onLogin}\makeatother
+\label{onLogin}
+
+Nella funzione \textcourier{\ref{onLogin}\textcolor{red}{()}}, viene utilizzata una funzione del pacchetto \\\textcourier{web3.eth}: la funzione \textcourier{getAccounts()}, che non fa altro che restituire l'elenco degli account controllati dal nodo, come definito in \cite{web3API}. Nella riga 3 viene assegnato l'oggetto restituito dalla funzione; se questo oggetto esiste significa che l'utente ha effettuato con successo la connessione a Metamask, altrimenti si controlla (nella riga 7) se l'account con il quale si è fatto l'accesso è diverso dall'account corrente: in poche parole si verifica se un utente ha già effettuato l'accesso alla Dapp. Se sì, la funzione termina la sua esecuzione perché i dati per quell'utente sono già stati settati, se no, invece, viene confermato che è il primo accesso dell'utente in questione e si settano tutte le variabili utili per il corretto funzionamento delle funzionalità successive. 
+Da notare come le variabili vengono settate attraverso lo \textit{UseState Hook} di React, definito in \cite{React}. 
+La schermata di caricamento col relativo inserimento della propria password, viene visualizzata finché non si completa la riga 3 della funzione \textcourier{\ref{onLogin}\textcolor{red}{()}} ( il comando \textcourier{await} viene utilizzato per attendere una \textit{Promise}\footnote{L'oggetto Promise rappresenta l'eventuale completamento (o fallimento) di un'operazione asincrona e il suo valore risultante.} e ottenere il suo valore), la quale attiva l'estensione Metamask del browser web, mostrando un pop-up con un form per l'inserimento dei dati relativi all'accesso. Viene mostrata la schermata nella figura \ref{caricamento_login}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=13.5cm,height=10cm]{Immagini/VisualizzazioneMetamask.png}
+    \caption[Schermata di caricamento per l'inserimento dei dati di accesso]{Schermata di caricamento in attesa che l'utente inserisca i dati di accesso.}
+    \label{caricamento_login}
+\end{figure}
+Una volta effettuato l'accesso a Metamask, si visualizza l'indirizzo pubblico del proprio wallet direttamente nella Navbar dell'applicazione, in maniera tale da rendere la gestione dei propri address più semplice e intuitiva.
+
+\subsubsection{Componente Swap.js}\makeatletter\def\@currentlabel{Swap.js}\makeatother\label{Swap.js}
+La componente \textcourier{Swap.js} è la parte del nostro exchange che si occupa dello Swap dei token ERC-20 della rete Ethereum. L'interfaccia grafica della componente è composta da un grafico animato, strutturato grazie all'ausilio di una libreria React per la composizione di grafici: la libreria \textcourier{react-chartjs-2}, installata tramite il comando \textcourier{npm install react-chartjs-2}. Il grafico in questione si tratta di un \textit{Line Chart}, il quale riceve dei dati in input da parte di una API di \textit{CoinGecko} \cite{CoinGecko} che ottiene i dati storici (nome, prezzo, mercato, statistiche) in una determinata data per il singolo token. Il codice relativo alla chiamata dell'API viene mostrato in \ref{APIcode}. La chiamata all'API in questione è stata riscritta come una \textit{arrow function}\footnote{Scrittura alternativa (più pulita) di una funzione tradizionale. Questa funzionalità è stata introdotta nella versione ES6 di JavaScript.} rinominata “\textit{HistoricalChart}” nella componente \textcourier{API.js}. Questa funzione richiede tre parametri in input, rispettivamente: 
+\begin{itemize}
+\item L'id del token (ossia il nome del token) scelto per cui si vuole visualizzare il prezzo nel corso del tempo;
+\item I days (giorni), ossia il range di tempo per ricevere l'istantanea dei dati;
+\item La currency, ossia la valuta con cui si vuole visualizzare i prezzi (nell'applicazione vengono gestiti i prezzi in Euro e in Dollari).
+\end{itemize}
+Da notare come nella funzione \textit{HistoricalChart} siano stati utilizzati i \textit{Template Literals}, i quali permettono di creare stringhe interpolate, ossia stringhe con l'aggiunta dinamica di elementi all'interno di esse. 
+\begin{lstlisting}[caption={[API Code]},language=jsx] 
+
+  /*Componente API.js, la quale definisce tutte le chiamate API
+  che si vogliono utilizzare per inviarle al server web*/
+  
+export const HistoricalChart = (id, days = 365, currency) =>
+    `https://api.coingecko.com/api/v3/coins/${id}/market_chart?vs_currency=${currency}&days=${days}`;
+
+  /*Componente Swap.js, parte relativa alla chiamata dell'API*/
+  
+import {HistoricalChart} from "../config/API";  
+const fetchHistoricData = async () => {
+        const dataTokenA = (await axios.get
+        (HistoricalChart(tokenA ? tokenA.id : "ethereum", days, currency))).data;
+        setHistoricDataTokenA(dataTokenA.prices);
+    };
+
+    useEffect(() => {
+        fetchHistoricData();
+    }, [days, tokenA, tokenB, currency])
+    																							       -APIcode
+\end{lstlisting}\makeatletter\def\@currentlabel{APIcode}\makeatother
+\label{APIcode}
+Per quanto riguarda, invece, la chiamata GET effettiva da mandare al server, si sfrutta un'altra libreria Javascript che ci permette di gestire le richieste effettuate tramite il protocollo HTTP e di connetterci alle API: la libreria \textcourier{axios}, installabile tramite il comando \textcourier{npm i axios} (la chiamata axios viene definita nella riga 12 di \ref{APIcode}).
+Sempre in \ref{APIcode}, alla riga 17, viene utilizzato un'altro hook molto importante di React chiamato \textit{useEffect}, il quale, come si dice in \cite{React} :“consente di eseguire effetti collaterali nei componenti”; nel nostro caso, viene utilizzato per chiamare la funzione \textcourier{fetchHistoricData()} ogni volta che gli elementi presenti nelle \textit{dependency}\footnote{Un array di dipendenze richiesto facoltativamente dallo useEffect. L'hook esegue il suo contenuto solo se le dipendenze sono cambiate tra i rendering.} dell' hook vengono modificati. Questo meccanismo ci permette di rendere l'interfaccia utente molto dinamica, facendo sì che il grafico (in questo caso specifico) venga aggiornato ad ogni azione dell'utente, permettendogli una veloce e intuitiva comunicazione con l'applicazione. Viene mostrata in figura \ref{grafico} l'implementazione del grafico appena citato.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=13cm,height=8cm]{Immagini/Grafico.png}
+    \caption[Line Chart implementato nell'applicativo riferito all'exchange]{Line Chart di esempio della coppia Ethereum/Dai-token.}
+    \label{grafico}
+\end{figure}
+Come è possibile notare, il \textit{Line Chart} è una sorta di griglia sulla quale è tracciata una linea colorata che definisce l'andamento del prezzo nel corso del tempo. Il grafico possiede due serie di label: nella parte inferiore e nella parte laterale; nella parte laterale vengono definite le righe corrispondenti al prezzo della coppia tokenA/tokenB, mentre, nella parte inferiore, vengono tracciate le colonne, ognuna delle quali, corrisponde ad un determinato giorno. A seconda del bottone cliccato tra i quattro selezionabili nella parte sottostante, il grafico cambia forma in maniera del tutto animata, definendo una nuova traccia. Inoltre, se si passa col mouse su un punto del grafico è possibile visualizzare il prezzo in quella determinata data ( o orario).
+
+La coppia di token mostrata nel grafico viene scelta attraverso il Card implementato per l'operazione di swap vera e propria. Il Card in questione (mostrato in figura \ref{swapCard}) ci permette di selezionare la coppia di token attraverso un \textit{dropdwon menu} di monete( o token) che si apre facendo click sull'etichetta “Seleziona Token”. Verrà inoltre mostrato il \textit{balance} (saldo) dello specifico token scelto andando a controllare le disponibilità nel wallet dell'account collegato alla nostra Dapp; questa procedura di verifica del balance viene effettuata attraverso il comando: 
+\begin{quote}
+\textcourier{ \textcolor{orangeWords}{await} tokenContract.\textcolor{purpleWords}{methods}.\textcolor{yellowFunction}{balanceOf}(props.\textcolor{purpleWords}{currentAccount}).\textcolor{yellowFunction}{call}()} 
+\end{quote}\label{tokenContract}
+
+dove \textit{tokenContract} è l'istanza di un oggetto \textcourier{web3.eth.Contract} rappresentate il token che è stato selezionato(approfondiremo l'interazione coi contratti dei token ERC-20 in \ref{interazione_smartc}), \textit{balanceOf} è un metodo definito nell'ABI del contratto di un token ERC-20 che richiede come unico parametro l'address del possessore di questi token (nel nostro caso abbiamo inserito il \textit{currentAccount}, ossia l'address dell'account connesso al momento).
+
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=12cm,height=8cm]{Immagini/SwapCard.png}
+    \caption[Selezione dei token per il Card relativo allo Swap]{Selezione token per il Card relativo allo Swap.}
+    \label{swapCard}
+\end{figure}
+Dal momento che l'EVM non supporta i numeri decimali, bisogna gestire il formato numerico con il quale, il dato token, è stato specificato alla sua creazione. Il formato è verificabile tramite la funzione \textcourier{decimals()} per ogni token ERC-20. 
+Esistono token con differenti formati, di conseguenza, dal front-end bisogna gestire questa differenziazione per rendere leggibile i dati all'utente; nella nostra applicazione gestiremo i token con unità decimali più diffuse (dai 6 ai più famosi 18 decimals), di seguito viene mostrato il codice per la gestione delle conversioni (\ref{TokenConversion}).
+
+\begin{lstlisting}[caption={[Token Conversion Code]},language=jsx] 
+/*Import dell'ABI standard di un token ERC-20*/
+import ERC20abi from "contracts/ERC20abi.json"
+  const setTokenAContract = async (token) => {
+        if(token.address != null) {
+            const tokenContract = 
+            new web3.eth.Contract(ERC20abi, token.address)
+            const val = 
+            await tokenContract.methods.balanceOf(props.currentAccount).call()
+            if (token.decimals === 18) {  /*18 decimals token*/
+                const bal=web3.utils.fromWei(val, "ether")
+                setBalance(bal)
+            }
+            if (token.decimals === 8) {   /*8 decimals token*/
+                const bal=web3.utils.fromWei(val, "gwei")
+                setBalance(bal)
+            }
+            if (token.decimals === 6) {   /*6 decimals token*/
+                const bal=web3.utils.fromWei(val, "mwei")
+                setBalance(bal)
+            }
+        } else{  /*Se e' stato selezionato Ethereum nel menu*/
+            const val=
+            await web3.eth.getBalance(props.currentAccount)
+            const bal=web3.utils.fromWei(val, "ether")
+            setBalance(bal)
+        }
+    }
+    																			       -TokenConversion
+\end{lstlisting}\makeatletter\def\@currentlabel{TokenConversion}\makeatother
+\label{TokenConversion}
+
+Per la leggibilità dei dati all'utente, utilizziamo il pacchetto \textcourier{web3.utils} e la funzione \textcourier{web3.utils.fromWei()}, la quale richiede come parametri un valore (nel nostro caso il balance del token restituito dalla funzione \textcourier{balanceOf()} a riga 8) e una stringa che definisce in quale formato trasformare questo valore (la stringa deve essere scelta seguendo un \textit{unitMap} riportato in documentazione \cite{web3API}). Verrà mostrato su schermo il valore “balance” settato tramite useState nella funzione setTokenContract in \ref{TokenConversion}. 
+
+Nel caso in cui venga selezionato Ethereum dal menu (il quale non è un token dello standard ERC-20 e non presenta un address specifico), il balance da mostrare riferito agli Ether disponibili nel wallet viene gestito dalla funzione a riga 22.  La funzione in questione fa parte del pacchetto \textcourier{web3.eth} e richiede come singolo parametro l'address dell'account da cui ottenere il dato; nel nostro caso è stato inserito l'account attualmente collegato all'applicazione. 
+
+Come si può notare in figura \ref{swapCard}, il Card è composto, inoltre, da due form di input in cui è possibile selezionare il quantitativo di token che si vuole scambiare; una volta inseriti è possibile lanciare la chiamata allo smart-contract e alla relativa funzione per lo swap tramite il bottone con label “Swap”, la quale logica approfondiremo in \ref{interazione_smartc}.
+
+Infine, si mostra la schermata generale comprensiva dei due Card appena descritti. La pagina mostrata in figura \ref{schermataSwap} riproduce la componente 
+\textcourier{Swap.js} con il suo path specifico settato nell'URL dell'applicazione. Come si evince dalla figura, il grafico visualizza la traccia esatta per i token selezionati dal Card riferito all'operazione di swap (nel nostro esempio LINK e DAI); è presente, inoltre, un bottoncino in alto a sinistra per cambiare la \textit{currency} che l'utente desidera visualizzare nel grafico, il quale funzionamento è stato gestito tramite il meccanismo dei \textit{Context}, che, in poche parole, ci permette di condividere dati considerati “globali” per un albero di componenti in React. Questo meccanismo può tornare utile per definire funzioni o variabili richiesti da molte componenti; siccome il cambio della valuta è un elemento prioritario in un exchange, si è pensato di gestire il “cambio” in questa maniera.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=15cm,height=7cm]{Immagini/SwapSchermata.png}
+    \caption[Schermata generale dello Swap]{Schermata generale dello Swap.}
+    \label{schermataSwap}
+\end{figure}
+
+\subsubsection{Componente Liquidity.js}\makeatletter\def\@currentlabel{Liquidity.js}\makeatother\label{Liquidity.js}
+La componente \textcourier{Liquidity.js} è la seconda parte del nostro exchange che si occupa della gestione e della creazione dei Pool di liquidità. Il Card in questione è molto simile a quello dello swap, con l'unica differenza che la logica dietro ad esso è molto differente (le differenze verrano precisate nel dettaglio in \ref{interazione_smartc}).
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=8cm,height=9cm]{Immagini/LiquidityCard.png}
+    \caption[Card per l'aggiunta di liquidità nei pool di liquidità]{Interfaccia grafica Card per l'aggiunta di liquidità nei pool di liquidità.}
+    \label{liquidityCard}
+\end{figure}
+Per quanto riguarda l'aspetto grafico, come si vede in figura \ref{liquidityCard}, le uniche due differenze con lo swap si denotano dal bottone che avvia la logica dell'operazione (con etichetta “Add Liquidity”) e nella visualizzazione dei valori inseriti dall'utente all'interno dei due form di input.
+
+Il form è stato pensato in maniera tale che un utente, subito dopo l'inserimento di un dato quantitativo di token (e quindi dell'ipotetica liquidità da aggiungere all'interno della Pool), il sistema calcoli gli importi massimi di output per quel determinato valore, date le \textit{riserve} per quel Pool.
+
+L'operazione appena descritta è molto utile per visualizzare quanti token effettivi l'utente debba depositare nella Pool (ricordiamo che per depositare fondi in un Pool, è necessario fornire una stessa quantità di liquidità per token, come anticipato nel paragrafo \ref{pool_liquidità}).
+
+Questo è reso possibile grazie ad una funzione scritta in \textcourier{Liquidity.js}, mostrata di seguito:
+
+\begin{lstlisting}[caption={[\textcourier{getPriceLiquidity()} Function]},language=jsx] 
+const getPriceLiquidity = async (value) => {
+const utilsSet = async (convertion) => {
+    if (PairAddress === NULL_ADDRESS) {
+       const valueConverted=convertToWei(convertion,value)
+       setTokenA_Quantity(valueConverted)
+    }
+    else {
+       /*flag booleano (loading) per attendere che
+       l'operazione a riga 16 termini. Utilizzata per 
+       visualizzare un loading animation durante l'esecuzione*/
+       setLoading(true) 
+       const valueConverted=convertToWei(convertion,value)
+       setTokenA_Quantity(valueConverted)
+       const path = [
+           tokenA.address,
+           tokenB.address
+        ]
+       /*Chiamata alla funzione getAmountsOut() dallo
+       smart-contract del Router dell'exchange*/
+       const price = 
+       await props.router.methods.
+       getAmountsOut(tokenA_Quantity, path).call()
+       const output = props.web3.utils.fromWei(price[1], "ether")
+       setLoading(false)
+       setOutputQuantity(output)
+   }
+}
+const PairAddress=
+await props.factory.methods.
+getPair(tokenA.address, tokenB.address).call();
+setPairAddress(PairAddress);
+// Se i due token sono stati selezionati
+if (tokenA && tokenB && value !== 0) {
+    if (tokenB.decimals === 18) {
+        await utilsSet("ether")
+    }
+    if (tokenB.decimals === 8) {
+        await utilsSet("gwei")
+    }
+    if (tokenB.decimals === 6) {
+         await utilsSet("mwei")
+    }
+}
+}
+    																			     -getPriceLiquidity
+\end{lstlisting}\makeatletter\def\@currentlabel{getPriceLiquidity()}\makeatother
+\label{getPriceLiquidity}
+
+Nella funzione \textcourier{\ref{getPriceLiquidity}}, a seconda del tipo di token per il quale si deve calcolare l'importo massimo di output, viene lanciata la funzione \textcourier{utilsSet()}, la quale, da riga 7,  converte il valore del token A dato in input dall'utente nel formato del token B scelto per poi eseguire, alla riga 15 la funzione che ci permette di calcolare l'output atteso.
+La funzione in questione (\textcourier{getAmountsOut()}) fa parte del \textit{RouterContract} dell'exchange e richiede come parametri un valore (corrispondente al valore inserito dall'utente nel primo form di input) e un array di address, il quale deve contenere gli address dei token scelti dall'utente per i quali si vuole aggiungere liquidità (inizializzato, nel nostro caso, a riga 11). L'array in questione può essere personalizzato a proprio piacimento per applicare il concetto di \ref{Routing}.
+
+\subsection{Interazione con gli smart-contract}\label{interazione_smartc}
+Come definito in \cite{web3API}, per l'interazione con gli smart-contract lato front-end ci viene in soccorso l'oggetto \textcourier{web3.eth.Contract}. Questo oggetto (presente all'interno del pacchetto \textcourier{web3.eth}) semplifica molto l'interazione con gli smart-contract sulla Blockchain di Ethereum. Al momento della creazione dell'oggetto \textcourier{web3.eth.Contract}, bisogna passare come primo parametro l'interfaccia JSON(corrispondente all'ABI del contratto; la definizione è stata anticipata in \ref{Solidity}) del rispettivo contratto e, come secondo parametro, l'address dello stesso. Si mostra di seguito un esempio pratico.
+\begin{quote}
+\centering
+\textcourier{\textcolor{orangeWords}{new} \textcolor{purpleWords}{web3}.\textcolor{purpleWords}{eth}.\textcolor{yellowFunction}{Contract}(jsonInterface, address)}
+\end{quote}
+
+In questo paragrafo spiegheremo il modo con cui utilizzare l'oggetto appena citato e i vari metodi degli smart-contract da chiamare. Suddivideremo il paragrafo in diverse sezioni:
+\begin{itemize}
+\item Interazione con gli \ref{ERC-20 Contracts};
+\item Interazione con il \ref{Exchange Contracts} (operazioni per lo swap di token e per la gestione dei Pool di liquidità).
+\end{itemize}
+
+\subsubsection{ERC-20 Contracts}\makeatletter\def\@currentlabel{ERC-20 Contracts}\makeatother
+\label{ERC-20 Contracts}
+Ricordiamo come lato front-end, una volta renderizzati i Card relativi allo swap e ai Pool di liquidità, venisse richiesta la selezione, da parte dell'utente, della coppia dei token. La selezione dei due token avviene attraverso le componenti \textcourier{TokenA.js} e \textcourier{TokenB.js}, che renderizzano il menu (raffigurato in figura \ref{swapCard}) e istanziano un oggetto \textcourier{web3.eth.Contract} per ogni token selezionato dall'utente.
+La gestione dell' ERC-20 Contract è mostrata nello snippet di codice \ref{TokenConversion}, riportiamo la riga corrispondente dell'istanziamento:
+\begin{quote}
+\centering
+\textcourier{\textcolor{orangeWords}{new} \textcolor{purpleWords}{web3}.\textcolor{purpleWords}{eth}.\textcolor{yellowFunction}{Contract}(ERC20abi, token.\textcolor{purpleWords}{address})}
+\end{quote}
+Siccome ERC-20 introduce uno standard per i token fungibili, al momento della creazione dello smart-contract riferito al token selezionato, passiamo come primo parametro l'ABI standardizzato (uguale per tutti), mentre, come secondo parametro inseriamo l'address del token scelto.
+
+Come si può notare dal codice, l'address viene recuperato da un oggetto “token”, prelevato effettuando il map da un file JSON precedentemente compilato con la lista dei nomi di tutti i tokek, i decimals riferiti allo specifico token, l'address, il simbolo (l'acronimo del nome , ad esempio ETH per Ethereum) e un asset(l'immagine del token). Così facendo, rendiamo il codice usabile, facile da modificare con un'interfaccia grafica (il menu dei token mostrato in figura\ref{swapCard}) intuitiva e molto semplice da utilizzare per l'utente finale.
+
+\subsubsection{Exchange Contracts}\makeatletter\def\@currentlabel{Exchange Contracts}\makeatother
+\label{Exchange Contracts}
+
+La maggior parte degli exchange decentralizzati basati sul meccanismo degli Automatic Market Maker (AMM), come la nostra applicazione, possiede, solitamente , due smart-contract principali:
+
+\begin{itemize}
+\item \textit{Factory Contract}: sono presenti le funzioni che permettono la generazione dei Pool di liquidità. Ogni Pool è identificabile da un \textit{Pair Contract} che definisce la coppia dei token. Nella nostra applicazione prende il nome di \textit{AtmosFactory};
+\item \textit{Router Contract}: supporta le funzionalità di base svolte per interagire con i \textit{Pair Contract}, fornisce una serie di funzioni di visualizzazione che verranno ampiamente utilizzate sul frontend del DEX e si interpone tra l'utente e il \textit{Factory Contract}. Nella nostra applicazione prende il nome di \textit{AtmosRouter}.
+\end{itemize}
+
+In questa parte dell'elaborato tratteremo la logica che c'è dietro alle operazioni che la nostra Dapp ci permette di fare, passando dalle operazioni di swap, fino all'aggiunta della liquidità per un Pool.
+Per quanto riguarda le operazioni di swap, nel nostro caso si sono diverse funzioni specifiche del \textit{Router Contract}; la prima funziona implementata è \textcourier{ \ref{swapExactTokensForTokens}}, il codice, scritto in Solidity, viene mostrato di seguito:\\
+
+\begin{lstlisting}[caption={[\textcourier{swapExactTokensForTokens()} Function]},language=Solidity] 
+function swapExactTokensForTokens(
+        uint256 amountIn, uint256 amountOutMin,
+        address[] calldata path, address to,
+        uint256 deadline
+    ) external virtual override 
+    ensure(deadline) returns (uint256[] memory amounts) {
+        amounts = 
+        AtmosLibrary.getAmountsOut(factory, amountIn, path);
+        require(amounts[amounts.length - 1] >= amountOutMin,
+        "AtmosRouter: INSUFFICIENT_OUTPUT_AMOUNT");
+        
+        TransferHelper.safeTransferFrom(
+            path[0],
+            msg.sender,
+            AtmosLibrary.pairFor(factory, path[0], path[1]),
+            amounts[0]
+        );
+        _swap(amounts, path, to);
+    }    															
+    															   	  -swapExactTokensForTokens
+\end{lstlisting}\makeatletter\def\@currentlabel{swapExactTokensForTokens()}\makeatother
+\label{swapExactTokensForTokens}
+
+Come mostrato all'interno dello snippet, la funzione richiede cinque parametri distinti:
+
+\begin{itemize}
+\item \textit{amountIn} corrispondente alla quantità di token da inviare;
+\item \textit{amountOut}, ossia la quantità minima di token di output che deve essere ricevuta;
+\item Il \textit{path}, ossia il “sentiero” che la funzione deve percorrere attraverso i pool di liquidità. Questi ultimi devono avere liquidità al loro interno;
+\item Il \textit{destinatario} dei token che verranno mandati;
+\item La \textit{deadline}, cioè la scadenza dopo la quale la transazione verrà ripristinata.
+\end{itemize}
+
+L'\textit{omountIn} corrisponde all'importo di token inserito nel form di input mostrato in figura \ref{swapCard}, cioè il valore che l'utente decide di trasferire a seconda delle sue disponibilità.
+L'\textit{amountOut} viene settato a zero per garantire il corretto funzionamento (non si è pensata a nessuna limitazione).
+Il \textit{path} viene settato attraverso l'address dei due token scelti dall'utente nel Card dello swap.
+
+Il \textit{destinatario} dell'invio corrisponderà all'account in quel momento connesso alla Dapp, mentre la \textit{deadline} è settata al momento del timestamp più dieci minuti di tolleranza nei quali l'utente deve completare e confermare la transazione.
+La precitata funzione scambia una quantità esatta di token (previa approvazione di un importo di indennità da dare al \textit{Router}, vedere \ref{approve}) di input con il maggior numero possibile di token di output, lungo il percorso determinato dal parametro \textcourier{path}. Il primo elemento del percorso deve essere il token che si vuole scambiare, l'ultimo deve essere il token di output che si vuole ricevere e tutti gli elementi intermedi, invece, rappresentano coppie intermedie tramite cui scambiare (guardare il \textit{Custom Path} di \ref{Routing}).
+
+A riga 8, attraverso la funzione \textcourier{getAmountsOut()} (la spiegazione di questa funzione è stata anticipata in \textcourier{\ref{getPriceLiquidity}},) si ricava l'omount calcolato dalle riserve della pool specifica per il nostro \textcourier{path}; una volta fatto ciò si trasferiscono, attraverso la funzione \textcourier{safeTransferFrom()}, i token del pool da un indirizzo all'altro. Essa richiede come parametri l'address del mittente, del ricevente, del Pair riferito alla coppia di token e l'amount definito precedentemente.
+Sarà poi la funzione \textcourier{\_swap()} a completare l'operazione in via definitiva.
+Si mostra lo snippet di codice presente all'interno della componente React \textcourier{Swap.js} per l'interazione allo smart-contract del \textit{Router}, la gestione della chiamata alla funzione \textcourier{\ref{swapExactTokensForTokens}} e dei relativi parametri.
+
+\begin{lstlisting}[caption={[Call \textcourier{swapExactTokensForTokens} Function (front-end) ]},language=jsx] 
+/*[...]*/
+    const path = [
+      tokenA.address,
+      tokenB.address
+    ]
+    const deadline = Math.floor(Date.now() + (10 * 60))
+    const valueConverted = new BN(value)
+    setTokenA_Quantity(valueConverted)
+       try {
+//Metodo del contratto AtmosRouter.sol per lo swap di token
+        await props.router.methods.swapExactTokensForTokens(
+          valueConverted,
+          new BN(0),
+          path,
+          props.currentAccount,
+          deadline
+        ).send({from: props.currentAccount, gas: 500000})
+        .then(tx => {
+             console.log("swapExactTokensForToken tx: ", tx)
+        });
+       } catch (error) {
+            console.log(error)
+       }
+/*[...]*/
+                                                                                          -swapExactTokensForTokens(front-end)
+\end{lstlisting}\makeatletter\def\@currentlabel{swapExactTokensForTokens()}\makeatother
+\label{swapExactTokensForTokens(front-end)}
+
+Ricordiamo come l'istanza del \textit{Router Contract} venga settata al momento dell'\ref{onLogin}, ogniqualvolta un nuovo utente accede all'applicazione. La chiamata riferita al contratto viene eseguita alla riga 11, utilizzando la funzione \textcourier{send()} la quale, a differenza della funzione \textcourier{call()} vista fin ora, altera lo stato dello smart-contract richiedendo un input all'utente per essere completate.
+La suddetta funzione permette di inserire dei parametri opzionali, ma molto importanti; nel nostro caso, come scritto a riga 17, si definiscono i parametri \textcourier{from} e \textcourier{gas}.
+Il parametro \textcourier{from} è un address che rappresenta l'indirizzo da cui deve essere inviata la transazione, mentre il parametro \textcourier{gas} corrisponde al gas limite previsto per questa transazione. 
+I parametri della funzione \textcourier{swapExactTokensForTokens} vengono inizializzati dalla riga 2 alla riga 8.
+
+
+La seconda funzione implementata si tratta di  \textcourier{\ref{swapExactETHForTokens}}; di seguito viene mostrato il codice Solidity in questione:\\
+
+\begin{lstlisting}[caption={[\textcourier{swapExactETHForTokens()} Function]},language=Solidity] 
+function swapExactETHForTokens(
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    )external payable virtual override 
+    
+    ensure(deadline) returns (uint256[] memory amounts) {
+        require(path[0] == WETH, "AtmosRouter: INVALID_PATH");
+        amounts = 
+        AtmosLibrary.getAmountsOut(factory, msg.value, path);
+        require(amounts[amounts.length - 1] >= amountOutMin, 
+        "AtmosRouter: INSUFFICIENT_OUTPUT_AMOUNT");
+        IWETH(WETH).deposit{value: amounts[0]}();
+        assert(IWETH(WETH).transfer(AtmosLibrary
+        .pairFor(factory, path[0], path[1]), amounts[0]));
+        _swap(amounts, path, to);
+    }    											        	   -swapExactETHForTokens
+\end{lstlisting}\makeatletter\def\@currentlabel{swapExactETHForTokens()}\makeatother
+\label{swapExactETHForTokens}
+
+La logica di questa funzione è molto simile alla precedente , con l'unica differenza che si scambia una quantità esatta di ETH con il maggior numero possibile di token di output; quindi, se un utente lo desidera, ha la possibilità di utilizzare Ether per lo scambio.
+La funzione richiede quattro parametri:
+ 
+ \begin{itemize}
+\item {amountOutMin} come per \textcourier{swapExactTokensForTokens};
+\item Il {path} corrispondente al percorso dei pool di liquidità, il primo elemento del percorso in questione deve necessariamente essere WETH\footnote{WETH (o Wrapped Ether) è un tipo speciale di token ERC-20 il cui scopo è facilitare diverse operazioni di scambio nell'ecosistema Ethereum(principalmente scambi di Ether per altri gettoni ERC-20).} e l'ultimo il token di output;
+\item Il {destinatario} dei token che verranno mandati;
+\item La {deadline} come per \textcourier{swapExactTokensForTokens}.
+ \end{itemize}
+ 
+ La funzione sopraccitata ha un funzionamento molto simile alla funzione \textcourier{\ref{swapExactTokensForTokens}}, con l'unica differenza che (dalla riga 14), viene richiesto il trasferimento di un numero equivalente all'amounts settato a riga 10 di WETH nella pool riferita al \textit{Pair} della coppia WETH-tokenB, per poi concludere con la consueta chiamata a \textcourier{\_swap()} e completare l'operazione in via definitiva.
+ 
+ 
+ Per quanto riguarda l'interfacciamento smart-contract alla funzione appena descritta, la logica è praticamente la stessa di \textcourier{\ref{swapExactTokensForTokens(front-end)}}
+ con la differenza che il \textit{path} deve essere inizializzato con l'address dei WETH riferiti alla rete di test Ropsten (nel nostro caso specifico). Di seguito mostriamo il codice presente all'interno della componente \textcourier{Swap.js}:\\
+
+\begin{lstlisting}[caption={[Call \textcourier{swapExactETHForTokens()} Function (front-end) ]},language=jsx] 
+/*[...]*/
+const WETH = await props.router.methods.WETH().call()
+const path = [
+   WETH,
+   tokenB.address
+]
+const deadline = Math.floor(Date.now() + (10 * 60))
+const valueConverted = new BN(value)
+setTokenA_Quantity(valueConverted)
+     try {
+//Metodo del contratto AtmosRouter.sol per lo swap di token
+       await props.router.methods.swapExactETHForTokens(
+             valueConverted,
+             new BN(0),
+             path,
+             props.currentAccount,
+             deadline
+       ).send({from: props.currentAccount, gas: 500000})
+       .then(tx => {
+                    console.log("swapExactETHForTokens tx: ", tx)
+                });
+        } catch (error) {
+            console.log(error)
+}
+/*[...]*/
+                                                                                             -swapExactETHForTokens(front-end)
+\end{lstlisting}\makeatletter\def\@currentlabel{swapExactETHForTokens()}\makeatother
+\label{swapExactETHForTokens(front-end)}
+
+Come si può notare alla riga 2 viene prelevato l'address del token WETH attraverso una chiamata dello smart-contract del \textit{Router}: \textcourier{WETH()}. Il valore risultante viene inserito nella prima posizione del percorso, nella variabile \textcourier{path}, come anticipato in precedenza. Per il resto, l'assegnazione, l'invio della transazione e la chiamata della funzione restano identici.
+
+Da precisare come queste non siano le uniche due funzioni (per le operazioni di swap) presenti all'interno dello smart-contract del \textit{Router}, bensì ne sono presenti diverse per ogni necessità. La logica di queste altre funzioni restano molto simili, con l'unica differenza che l'ordine con cui i percorsi vengono assegnati cambia, esempi di funzioni sono: \textcourier{swapTokensForExactTokens()} (il quale riceve una quantità esatta di token di output e non di input),\textcourier{swapExactTokensForETH()} (il quale permette di \textit{ricevere} ETH invece di mandarli).
+
+Una volta discusso delle funzioni riferite allo swap dei token, parliamo di una delle funzioni più importanti di un DEX, ossia quella per l' \ref{_addLiquidity}.
+La seguente funzione viene mostrata di seguito:\\
+
+\begin{lstlisting}[caption={[\textcourier{\_addLiquidity()} Function]},language=Solidity] 
+function _addLiquidity(
+        address tokenA,address tokenB,uint256 amountADesired,
+        uint256 amountBDesired,uint256 amountAMin,uint256 amountBMin
+    ) internal virtual returns
+    (uint256 amountA, uint256 amountB) {
+    /* Creazione del Pair Contract se non esiste */
+   if (IAtmosFactory(factory)
+   .getPair(tokenA, tokenB) == address(0)) {
+       IAtmosFactory(factory).createPair(tokenA, tokenB);
+   }
+   
+    /*Se si e' primi ad aggiungere liquidita' 
+    si determinera' il prezzo iniziale del Pool*/
+(uint256 reserveA, uint256 reserveB) = 
+AtmosLibrary.getReserves(factory, tokenA, tokenB);
+
+if (reserveA == 0 && reserveB == 0) {
+            (amountA, amountB) = 
+            (amountADesired, amountBDesired);
+} 
+else {
+   uint256 amountBOptimal = 
+   AtmosLibrary.quote(amountADesired, reserveA, reserveB);
+   if (amountBOptimal <= amountBDesired) {
+       require(amountBOptimal >= amountBMin,
+       "AtmosRouter: INSUFFICIENT_B_AMOUNT");
+  (amountA, amountB) =
+  (amountADesired, amountBOptimal);
+   } else {
+   uint256 amountAOptimal = 
+   AtmosLibrary.quote(amountBDesired, reserveB, reserveA);
+   assert(amountAOptimal <= amountADesired);
+   require(amountAOptimal >= amountAMin, 
+   "AtmosRouter: INSUFFICIENT_A_AMOUNT");
+   (amountA, amountB) =
+   (amountAOptimal, amountBDesired);
+            }
+        }
+    }    											        	   			   -_addLiquidity
+\end{lstlisting}\makeatletter\def\@currentlabel{\_addLiquidity()}\makeatother
+\label{_addLiquidity}
+
+La seguente funzione ha bisogno di otto parametri, definiti di seguito:
+\begin{itemize}
+\item L'address del \textit{tokenA};
+\item L'address del \textit{tokenB};
+\item \textit{amountADesired}: la quantità di tokenA da aggiungere come liquidità;
+\item \textit{amountBDesired}: la quantità di tokenB da aggiungere come liquidità;
+\item \textit{amountAMin}: limita il fatto che il prezzo del tokenB/ tokenA possa aumentare prima che la transazione avvenga;
+\item \textit{amountBMin}: limita il fatto che il prezzo del tokenA/ tokenB possa aumentare prima che la transazione avvenga.
+\end{itemize}
+Mentre, come valori di ritorno, restituisce la coppia \textcourier{(amountA,amountB)}.
+A riga 7, la funzione parte con un controllo chiamando la funzione \textcourier{getPair()} del \textit{Factory Contract}. Questa funzione serve per ottenere l'indirizzo del \textit{Pair Contract} dati i due token scelti dal front-end. Tramite questa funzione, si verifica se è uguale ad un adress nullo; se sì, viene creato il \textit{Pair Contract} corrispondente alla coppia tramite la funzione dello smart-contract della \textit{Factory} chiamata  \textcourier{createPair()}.
+
+Subito dopo aver effettuato questo controllo preliminare, si verifica, a riga 17, se le riserve dei due token sono uguali a zero (praticamente se si è i primi a voler aggiungere liquidità) allora si aggiunge la liquidità con i valori passati in  \textcourier{amountADesired} e \textcourier{amountBDesired}, determinando, di conseguenza, il prezzo iniziale della Pool, in quanto primi Liquidity Provider (LP).
+
+Se questo non fosse il caso, da riga 21 in poi si setta la variabile \textcourier{amountBOptimal} con la funzione \textcourier{quote()} dello smart-contract della \textit{Library}. Essa richiede tre parametri specifici: come primo parametro un importo di asset (in questo caso  \textcourier{amountADesired}) e come secondo e terzo parametro le riserve dei due token; la funzione attraverso dei calcoli matematici (mostrati di seguito):
+\begin{quote}
+\centering
+                   \textcourier{amountBOptimal=(amountADesired $\bigcdot $ reserveB)\big/reserveA}
+\end{quote}
+trova l'importo ottimale del token B.
+
+Una volta fatto ciò, a riga 24, si controlla se il valore trovato è minore o uguale della quantità di token che si vogliono aggiungere alla liquidità (\textcourier{amountBDesired}), se va a buon fine, si richiede, alla riga successiva, che tale valore sia anche maggiore o uguale a \textcourier{amountBMin}(per evitare che l'operazione non sia più conveniente) e solo se anche questa condizione è verificata verrà restituita la coppia \textcourier{(amountADesired,amountBOptimal)}.
+
+Se, invece, la prima condizione citata a riga 24, non venisse verificata , si riesegue lo stesso identico codice, ma per il token A.
+
+Per quanto riguarda la chiamata dell'aggiunta della liquidità da parte del front-end (appena l'utente ha inserito tutti i dati e ha interagito con il bottone,come mostrato in \ref{Liquidity.js}) si utilizza un'altra funzione sempre facente parte del \textit{Router Contract} ossia \ref{addLiquidity}: \\
+
+\begin{lstlisting}[caption={[\textcourier{addLiquidity()} Function]},language=Solidity] 
+function addLiquidity(
+   address tokenA,address tokenB,
+   uint256 amountADesired,uint256 amountBDesired,
+   uint256 amountAMin,uint256 amountBMin,address to,
+   uint256 deadline
+   )external virtual override ensure(deadline)
+   returns (
+       uint256 amountA,
+       uint256 amountB,
+       uint256 liquidity
+    )
+    {
+        (amountA, amountB) =
+        _addLiquidity(tokenA, tokenB,
+        amountADesired, amountBDesired,
+        amountAMin, amountBMin);
+        address pair = AtmosLibrary
+        .pairFor(factory, tokenA, tokenB);
+        TransferHelper
+        .safeTransferFrom(tokenA, msg.sender, pair, amountA);
+        TransferHelper
+        .safeTransferFrom(tokenB, msg.sender, pair, amountB);
+        liquidity = IAtmosPair(pair).mint(to);
+    }    											        	   			    -addLiquidity
+\end{lstlisting}\makeatletter\def\@currentlabel{addLiquidity()}\makeatother
+\label{addLiquidity}
+
+Questa è la funzione che lanceremo dal front-end, la quale possiede gli stessi identici parametri della funzione \ref{_addLiquidity}, con l'aggiunta dei parametri \textit{deadline} e \textit{to}(riferito all'address del destinatario). 
+Partendo da riga 13, la funzione richiama \ref{_addLiquidity} coi relativi parametri aggiunti, per farsi restituire la coppia \textcourier{(amountA,amountB)} i quali valori verranno utilizzati poi dopo per il trasferimento 
+
+A riga 17 viene inizializzata una variabile di tipo address tramite la funzione \textcourier{pairFor()} del \textit{Library Contract}, la quale non fa altro che calcolare l'indirizzo per una coppia senza effettuare chiamate esterne alla \textit{Factory}, per l'appunto, si passa come parametro proprio l'address della \textit{Factory} e dei due token. La variabile factory in questo contesto è una \textit{variabile globale}\footnote{variabili che possono venire usate da tutte le funzioni e dal programma principale.} dello smart-contract del \textit{Router}.
+
+Successivamente, a riga 19 e 21, chiamiamo due volte la funzione \textcourier{safeTransferHelper()} che richiede come parametri quattro valori:
+
+\begin{itemize}
+\item L'address del token da mandare al \textit{Pair};
+\item L'address del \textit{msg.sender}, ossia colui che lancia la funzione (nel nostro caso l'utente attualmente collegato alla Dapp);
+\item L'address del \textit{Pair} calcolato prima;
+\item L'amount (il quantitativo) del rispettivo token;
+\end{itemize}
+
+La funzione in questione viene chiamata due volte perché, come ricordiamo, quando si deve aggiungere liquidità (come anticipato in \ref{pool_liquidità}), è necessario fornire la stessa quantità di liquidità per token. Proprio per questo si utilizza in \ref{_addLiquidity} la funzione \textcourier{quote()} per il calcolo del valore preciso da assegnare ai due token.
+La funzione \textcourier{safeTransferHelper()}, quindi, permette di far mandare un quantitativo preciso di token al contratto \textit{Pair} da parte dell'utente chiamante.
+
+Una volta descritte le funzioni utilizzate nel linguaggio Solidity, analizziamo come ci si è comportati, lato front-end per la chiamata della funzione per l'aggiunta della liquidità.
+
+Di seguito si mostra lo snippet di codice di riferimento:\\
+
+\begin{lstlisting}[caption={[Call \textcourier{addLiquidity()} Function (front-end)]},language=jsx] 
+/*[...]*/
+const addLiquidity = async (value) => {
+/*Se i due token esistono e se il valore 
+inserito nel form e' diverso da zero*/
+if(tokenA && tokenB && value!==0) {
+    const tokenAContract =
+    SetERC20Contract(props.web3,tokenA.address)
+    const tokenBContract =
+    SetERC20Contract(props.web3,tokenB.address)
+    await ApproveRouter(props.web3,props.currentAccount,
+            tokenAContract,ROUTER_ADDRESS)
+    await ApproveRouter(props.web3,props.currentAccount,
+            tokenBContract,ROUTER_ADDRESS)
+    await props.router.methods.addLiquidity(
+                tokenA.address,
+                tokenB.address,
+                tokenA_Quantity,
+                outputQuantity,
+                0,
+                0,
+                props.currentAccount,
+                Math.floor(Date.now() / 1000) + 60000 * 10
+            ).send({from:props.currentAccount,gas:500000})
+            .then(tx => console.log("\addLiquidity tx: "+tx))
+        }
+    }
+/*[...]*/
+
+/*Funzione chiamata a riga 10 e 12*/
+export async function ApproveRouterSwap
+(web3,currentAccount,_contract,router) {
+	const value=web3.utils
+    .toBN("11579208923731619542357098500868790785326
+    9984665640564039457584007913129639935");
+    
+    await _contract.methods
+        .approve(router, value)
+        .send({from: currentAccount})
+}
+                                                                                                      -addLiquidity(front-end)
+\end{lstlisting}\makeatletter\def\@currentlabel{addLiquidity()}\makeatother
+\label{addLiquidity(front-end)}
+
+La funzione in questione viene chiamata all'onClick del bottone con etichetta “addLiquidity” visualizzato in figura \ref{liquidityCard}. Prima di poter chiamare la funzione dello smart-contract del nostro \textit{Router}, bisogna inizializzare gli oggetti \textcourier{web3.eth.Contract} dei due token; a rigga 7 e 9 vengono istanziati attraverso la funzione \textcourier{SetERC20Contract()} per evitare ridondanze. 
+
+Gli oggetti istanziati ci serviranno per lanciare la funzione \textcourier{ApproveRouter()}, la quale lancia l'\textcourier{approve()} del contratto del token passato come parametro. Un caso d'uso comune è quello di approvare i token attraverso la metodologia utilizzata in questa funzione, infatti, come si vede a riga 33, si setta una variabile con il massimo intero possibile da poter utilizzare in Solidity. Così facendo il \textit{Router Contract} può trasferire tutti i token per evitare all'utente procedure continue di approvazione, rallentando le operazioni e le procedure dei servizi offerti dal DEX. Ovviamente, prima di accettare l'approvazione di tale ammontare, l'utente deve essere consapevole dell'affidabilità della piattaforma su cui operare. Un esempio di piattaforma che utilizza questa metodologia è proprio Uniswap \cite{uniswap}.
+
