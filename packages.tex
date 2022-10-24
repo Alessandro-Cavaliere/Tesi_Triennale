@@ -1,0 +1,363 @@
+\usepackage{extsizes}
+\usepackage[utf8]{inputenc}
+\usepackage[big]{titlesec}
+\usepackage[italian,english]{babel}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[italian]{minitoc}% per gli accenti
+\usepackage{fancybox}
+\usepackage{fancyhdr}
+\usepackage{verbatim}
+\usepackage{url}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{makeidx}
+\usepackage{comment}
+\usepackage[a4paper, total={5in,8in}]{geometry}
+\usepackage{etoolbox}
+\DeclareTextFontCommand{\textcourier}{\fontfamily{phv}\selectfont}
+
+\renewcommand\lstlistlistingname{Elenco dei codici}
+
+\newcommand\myemptypage{
+    \null
+    \thispagestyle{empty}
+    \addtocounter{page}{-1}
+    \newpage
+    }
+    
+    \newcommand\emptypage{
+    \null
+    \addtocounter{page}{-1}
+    \newpage
+    }
+
+\makeatletter
+\newcommand*\bigcdot{\mathpalette\bigcdot@{.5}}
+\newcommand*\bigcdot@[2]{\mathbin{\vcenter{\hbox{\scalebox{#2}{$\m@th#1\bullet$}}}}}
+\makeatother
+%%%%Url settings%%%%%%%
+\usepackage{url}
+\def\UrlBreaks{\do\/\do-}
+\usepackage{breakurl}
+\usepackage[breaklinks]{hyperref}
+%%%%%%%%%%%%%%%%%
+
+%%%%Footnote settings%%%%
+\usepackage{chngcntr}
+\counterwithout{footnote}{chapter}
+\renewcommand{\thefootnote}{\textbf{\arabic{footnote}}}
+\usepackage[flushmargin]{footmisc}
+\addtolength{\footnotesep}{1mm} % change to 1mm
+%%%%%%%%%%%%%%%%%
+
+\renewcommand{\citeform}[1]{\textbf{#1}}
+
+
+
+\pagestyle{plain}
+\fancyhf{}
+
+%Definizione var footnotemark per poter colorare i numeri riferiti ai footnote
+\makeatletter
+\def\@footnotecolor{red}
+\define@key{Hyp}{footnotecolor}{%
+ \HyColor@HyperrefColor{#1}\@footnotecolor%
+}
+\patchcmd{\@footnotemark}{\hyper@linkstart{link}}{\hyper@linkstart{footnote}}{}{}
+\makeatother
+
+
+%Settaggio colori e stili per link,footnote e url
+\hypersetup{
+colorlinks=true,
+linkcolor=red,     
+urlcolor=blue,
+citecolor=[RGB]{0,0,255},
+footnotecolor=red,
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%Settaggio colori e funzioni per 
+\usepackage{listings} %code highlighter
+\usepackage{upquote}
+\usepackage{color}
+\definecolor{editorGray}{rgb}{0.95, 0.95, 0.95}
+\definecolor{editorOcher}{rgb}{1, 0.5, 0} % #FF7F00 -> rgb(239, 169, 0)    
+\definecolor{editorGreen}{rgb}{0, 0.5, 0} % #007C00 -> rgb(0, 124, 0)
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\definecolor{yellowFunction}{RGB}{247,173,78}
+\definecolor{greenComment}{RGB}{89,127,70}
+\definecolor{orangeWords}{RGB}{184,94,45}
+\definecolor{purpleWords}{RGB}{138,110,158}
+\definecolor{greyWords}{RGB}{80,80,83}
+
+
+\lstdefinelanguage{jsx}
+{
+keywords={useState,useEffect,useRef,on,reload,clear,getAccounts,getChainId,setItem,SetAtmosFactoryContract,SetAtmosRouterContract,log,Router,Route,Switch,Footer,Swap,Liquidity,Home,ConnectionCard,Navbar,utilsSet,convertToWei,setTokenAContract,Contract,fromWei,getBalance,showSidebar,ApproveRouterSwap,ApproveRouter,SetERC20Contract,toBN
+},
+keywordstyle=\color{yellowFunction}\bfseries,
+emph={window,ethereum,location,localStorage,eth,length,utils,factory,router,methods,web3,decimals,currentAccount, SidebarElements,path,icon},
+emphstyle=\color{purpleWords}\bfseries,
+ndkeywords={class, new,export, boolean, throw,return,async, implements,var, import, this,if,typeof,true, false, catch, function, null, catch,in, while,do, else, case, break,const,let,await,from},
+ndkeywordstyle=\color{orangeWords}\bfseries,
+identifierstyle=\color{black},
+sensitive=false,
+comment=[l]{//},
+morecomment=[s]{/*}{*/},
+commentstyle=\color{greyWords}\ttfamily,
+stringstyle=\color{editorGreen}\ttfamily,
+morestring=[b]',
+morestring=[b]",
+}
+
+
+\lstset{
+ alsodigit={.:;-},
+ backgroundcolor=\color{white}, % choose the background color; you must add 
+basicstyle=\footnotesize, % the size of the fonts that are used for the code
+breakatwhitespace=false, % sets if automatic breaks should only happen at whitespace
+breaklines=true, % sets automatic line breaking
+captionpos=b, % sets the caption-position to bottom
+commentstyle=\color{mygreen}, % comment style
+deletekeywords={...}, % if you want to delete keywords from the given language
+escapeinside={\%*}{*)}, % if you want to add LaTeX within your code
+extendedchars=true, % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+frame=single, % adds a frame around the code
+keepspaces=true, % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+keywordstyle=\color{blue}, % keyword style
+keywordstyle=[2]\color{purpleWords}\bfseries,
+% language=Octave, % the language of the code
+morekeywords={*,...}, % if you want to add more keywords to the set
+numbers=left, % where to put the line-numbers; possible values are (none, left, right)
+numbersep=5pt, % how far the line-numbers are from the code
+numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+rulecolor=\color{black}, % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+showspaces=false, % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+showstringspaces=false, % underline spaces within strings only
+showtabs=false, % show tabs within strings adding particular underscores
+stepnumber=1, % the step between two line-numbers. If it's 1, each line will be numbered
+stringstyle=\color{greenComment}, % string literal style
+tabsize=2, % sets default tabsize to 2 spaces
+title=\lstname % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+%END of listing package%
+
+
+
+
+
+
+
+
+\lstdefinelanguage{HTML5}{
+            language=html,
+            sensitive=true, 
+            alsoletter={<>\/=-},
+            otherkeywords={
+            % HTML tag
+            title,icon,path,
+           accelerator:,azimuth:,background:,background-attachment:,
+            background-color:,background-image:,background-position:,
+            background-position-x:,background-position-y:,background-repeat:,
+            behavior:,border:,border-bottom:,border-bottom-color:,
+            border-bottom-style:,border-bottom-width:,border-collapse:,
+            border-color:,border-left:,border-left-color:,border-left-style:,
+            border-left-width:,border-right:,border-right-color:,
+            border-right-style:,border-right-width:,border-spacing:,
+            border-style:,border-top:,border-top-color:,border-top-style:,
+            border-top-width:,border-width:,bottom:,caption-side:,clear:,
+            clip:,color:,content:,counter-increment:,counter-reset:,cue:,
+            cue-after:,cue-before:,cursor:,direction:,display:,elevation:,
+            empty-cells:,filter:,float:,font:,font-family:,font-size:,
+            font-size-adjust:,font-stretch:,font-style:,font-variant:,
+            font-weight:,height:,ime-mode:,include-source:,
+            layer-background-color:,layer-background-image:,layout-flow:,
+            layout-grid:,layout-grid-char:,layout-grid-char-spacing:,
+            layout-grid-line:,layout-grid-mode:,layout-grid-type:,left:,
+            letter-spacing:,line-break:,line-height:,list-style:,
+            list-style-image:,list-style-position:,list-style-type:,margin:,
+            margin-bottom:,margin-left:,margin-right:,margin-top:,
+            marker-offset:,marks:,max-height:,max-width:,min-height:,
+            min-width:,transition-duration:,transition-property:,
+            transition-timing-function:,transform:,
+            -moz-transform:,-moz-binding:,-moz-border-radius:,
+            -moz-border-radius-topleft:,-moz-border-radius-topright:,
+            -moz-border-radius-bottomright:,-moz-border-radius-bottomleft:,
+            -moz-border-top-colors:,-moz-border-right-colors:,
+            -moz-border-bottom-colors:,-moz-border-left-colors:,-moz-opacity:,
+            -moz-outline:,-moz-outline-color:,-moz-outline-style:,
+            -moz-outline-width:,-moz-user-focus:,-moz-user-input:,
+            -moz-user-modify:,-moz-user-select:,orphans:,outline:,
+            outline-color:,outline-style:,outline-width:,overflow:,
+            overflow-X:,overflow-Y:,padding:,padding-bottom:,padding-left:,
+            padding-right:,padding-top:,page:,page-break-after:,
+            page-break-before:,page-break-inside:,pause:,pause-after:,
+            pause-before:,pitch:,pitch-range:,play-during:,position:,quotes:,
+            -replace:,richness:,right:,ruby-align:,ruby-overhang:,
+            ruby-position:,-set-link-source:,size:,speak:,speak-header:,
+            speak-numeral:,speak-punctuation:,speech-rate:,stress:,
+            scrollbar-arrow-color:,scrollbar-base-color:,
+            scrollbar-dark-shadow-color:,scrollbar-face-color:,
+            scrollbar-highlight-color:,scrollbar-shadow-color:,
+            scrollbar-3d-light-color:,scrollbar-track-color:,table-layout:,
+            text-align:,text-align-last:,text-decoration:,text-indent:,
+            text-justify:,text-overflow:,text-shadow:,text-transform:,
+            text-autospace:,text-kashida-space:,text-underline-position:,top:,
+            -use-link-source:,vertical-align:,visibility:,
+            voice-family:,volume:,white-space:,widows:,width:,word-break:,
+            word-spacing:,word-wrap:,writing-mode:,z-index:,zoom:,background-,transition:,justify-
+            },  
+            ndkeywords={
+            % General
+            =, <, </, >,<Ailcons ,AiOutlineClose/>,
+            </a, <a, </a>,
+            </abbr, <abbr, </abbr>,
+            </address, <address, </address>,<Link,</Link>,
+            </area, <area, </area>,
+            </area, <area, </area>,
+            </article, <article, </article>,
+            </aside, <aside, </aside>,
+            </audio, <audio, </audio>,
+            </audio, <audio, </audio>,
+            </b, <b, </b>,
+            </base, <base, </base>,
+            </bdi, <bdi, </bdi>,
+            </bdo, <bdo, </bdo>,
+            </blockquote, <blockquote, </blockquote>,
+            </body, <body, </body>,
+            </br, <br, </br>,
+            </button, <button, </button>,
+            </canvas, <canvas, </canvas>,
+            </caption, <caption, </caption>,
+            </cite, <cite, </cite>,
+            </code, <code, </code>,
+            </col, <col, </col>,
+            </colgroup, <colgroup, </colgroup>,
+            </data, <data, </data>,
+            </datalist, <datalist, </datalist>,
+            </dd, <dd, </dd>,
+            </del, <del, </del>,
+            </details, <details, </details>,
+            </dfn, <dfn, </dfn>,
+            </div, <div, </div>,
+            </dl, <dl, </dl>,
+            </dt, <dt, </dt>,
+            </em, <em, </em>,
+            </embed, <embed, </embed>,
+            </fieldset, <fieldset, </fieldset>,
+            </figcaption, <figcaption, </figcaption>,
+            </figure, <figure, </figure>,
+            </footer, <footer, </footer>,
+            </form, <form, </form>,
+            </h1, <h1, </h1>,
+            </h2, <h2, </h2>,
+            </h3, <h3, </h3>,
+            </h4, <h4, </h4>,
+            </h5, <h5, </h5>,
+            </h6, <h6, </h6>,
+            </head, <head, </head>,
+            </header, <header, </header>,
+            </hr, <hr, </hr>,
+            </html, <html, </html>,
+            </i, <i, </i>,
+            </iframe, <iframe, </iframe>,
+            </img, <img, </img>,
+            </input, <input, </input>,
+            </ins, <ins, </ins>,
+            </kbd, <kbd, </kbd>,
+            </keygen, <keygen, </keygen>,
+            </label, <label, </label>,
+            </legend, <legend, </legend>,
+            </li, <li, </li>,
+            </link, <link, </link>,
+            </main, <main, </main>,
+            </map, <map, </map>,
+            </mark, <mark, </mark>,
+            </math, <math, </math>,
+            </menu, <menu, </menu>,
+            </menuitem, <menuitem, </menuitem>,
+            </meta, <meta, </meta>,
+            </meter, <meter, </meter>,
+            </nav, <nav, </nav>,
+            </noscript, <noscript, </noscript>,
+            </object, <object, </object>,
+            </ol, <ol, </ol>,
+            </optgroup, <optgroup, </optgroup>,
+            </option, <option, </option>,
+            </output, <output, </output>,
+            </p, <p, </p>,
+            </param, <param, </param>,
+            </pre, <pre, </pre>,
+            </progress, <progress, </progress>,
+            </q, <q, </q>,
+            </rp, <rp, </rp>,
+            </rt, <rt, </rt>,
+            </ruby, <ruby, </ruby>,
+            </s, <s, </s>,
+            </samp, <samp, </samp>,
+            </script, <script, </script>,
+            </section, <section, </section>,
+            </select, <select, </select>,
+            </small, <small, </small>,
+            </source, <source, </source>,
+            </span, <span, </span>,
+            </strong, <strong, </strong>,
+            </style, <style, </style>,
+            </summary, <summary, </summary>,
+            </sup, <sup, </sup>,
+            </svg, <svg, </svg>,
+            </table, <table, </table>,
+            </tbody, <tbody, </tbody>,
+            </td, <td, </td>,
+            </template, <template, </template>,
+            </textarea, <textarea, </textarea>,
+            </tfoot, <tfoot, </tfoot>,
+            </th, <th, </th>,
+            </thead, <thead, </thead>,
+            </time, <time, </time>,
+            </title, <title, </title>,
+            </tr, <tr, </tr>,
+            </track, <track, </track>,
+            </u, <u, </u>,
+            </ul, <ul, </ul>,
+            </var, <var, </var>,
+            </video, <video, </video>,
+            </wbr, <wbr, </wbr>,
+            />, <!,
+            % HTML attributes
+            accept=, accept-charset=, accesskey=, action=, align=, alt=, async=, autocomplete=, autofocus=, autoplay=, autosave=, bgcolor=, border=, buffered=, challenge=, charset=, checked=, cite=, class=, code=, codebase=, color=, cols=, colspan=, content=, contenteditable=, contextmenu=, controls=, coords=, data=, datetime=, default=, defer=, dir=, dirname=, disabled=, download=, draggable=, dropzone=, enctype=, for=, form=, formaction=, headers=, height=, hidden=, high=, href=, hreflang=, http-equiv=, icon=, id=, ismap=, itemprop=, keytype=, kind=, label=, lang=, language=, list=, loop=, low=, manifest=, max=, maxlength=, media=, method=, min=, multiple=, name=, novalidate=, open=, optimum=, pattern=, ping=, placeholder=, poster=, preload=, pubdate=, radiogroup=, readonly=, rel=, required=, reversed=, rows=, rowspan=, sandbox=, scope=, scoped=, seamless=, selected=, shape=, size=, sizes=, span=, spellcheck=, src=, srcdoc=, srclang=, start=, step=, summary=, tabindex=, target=, title=, type=, usemap=, value=, width=, wrap=,
+            },  
+            emph={map,onClick,showSidebar},
+            emphstyle=\color{yellowFunction}\bfseries,
+            keywordstyle=\color{editorGreen}\bfseries,
+        ndkeywordstyle=\color{blue}\bfseries,
+            morecomment=[s]{<!--}{-->},
+            tag=[s]
+    }
+    
+    
+    
+    
+    \lstdefinelanguage{Solidity}{
+           alsoletter={<>\/=-},
+            keywords={swapExactTokensForTokens,safeTransferFrom,swapExactETHForTokens},
+            keywordstyle=\color{yellowFunction}\bfseries,
+            emph={uint256,function,address,require,internal,virtual,external,override,return,returns},
+            emphstyle=\color{orangeWords}\bfseries,
+            identifierstyle=\color{black},
+sensitive=false,
+comment=[l]{//},
+morecomment=[s]{/*}{*/},
+commentstyle=\color{greyWords}\ttfamily,
+stringstyle=\color{editorGreen}\ttfamily,
+morestring=[b]',
+morestring=[b]"}
